@@ -1,5 +1,5 @@
 .data
-mazo:   .word 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10  # Mazo de 20 cartas (2 copias de cada carta)
+mazo:   .word 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10  # Mazo de 22 cartas (2 copias de cada carta)
 
     .text
     .globl main
@@ -7,8 +7,15 @@ mazo:   .word 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10  # Ma
 # FunciÃ³n principal
 main:
     # Se inicializa el mazo
-    jal inicializar_mazo  
-
+    jal inicializar_mazo
+    
+    # Aleatorizar el mazo
+    jal aleatorizar_mazo
+    
+    # Repartir las cartas
+    jal repartir_cartas
+    
+    
     li $v0, 10            
     syscall             
     
@@ -21,6 +28,57 @@ inicializar_mazo:
    
     # Regresamos a la funciÃ³n que llamÃ³ a "inicializar_mazo"
     jr $ra
+
+    
+# Funcion para aleatorizar el mazo
+aleatorizar_mazo: 
+	#Obtener el contador de ciclos (Semilla)
+	mfc0 $t8, $9
+	
+	# Definir las constantes para el LCG
+    	li $s7, 1664525       # Multiplicador (a)
+    	li $s6, 1013904223    # Incremento (c)
+    	li $s5, 4294967296    # Módulo (m)
+    	    	    	
+    	# Aleatorizar el mazo intercambiando cartas
+    	li $t5, 22            # Tamaño del mazo (22 cartas)
+    	li $t6, 0             # Contador de intercambios
+aleatorizar_mazo_loop:
+	# Generar número aleatorio (X_1) usando el contador de ciclos (X_0)
+    	mul $t3, $s7, $t8     # X_0 * a
+    	add $t3, $t3, $s6     # (X_0 * a + c)
+    	divu $t3, $s5         # (X_0 * a + c) / m
+    	mfhi $t4              # Obtener el residuo
+    	move $t8, $t4         # X_1
+    	
+    	#Generar el primer indice a partir de (X_1)
+    	move $t9, $t8
+    	divu $t9, $t5
+    	mfhi $t9	# indice entre [0,21]
+    	
+    	# Generar el segundo numero aleatorio (X_2) tomando como semilla (X_1)
+    	mul $t7, $s7, $t8
+    	add $t7, $t7, $s6
+    	divu $t7, $s5
+    	mfhi $t7	# X_2
+    	
+    	#Generar el segundo indice a partir de (X_2)
+    	move $t8, $t7
+    	divu $t7, $t5
+    	mfhi $t7 	# indice entre [0,21]
+    	
+    	# Logica de intercambiar las cartas (Falta implementar correctamente) : 
+    	#la $s0, mazo          # Dirección del mazo
+    	#lw $s7, 0($s0)        # Cargar carta en mazo[t9]
+    	#lw $s6, 4($s0)        # Cargar carta en mazo[t8]
+    	#sw $s6, 0($s0)        # Guardar carta en mazo[t9]
+    	#sw $s7, 4($s0)        # Guardar carta en mazo[t8]
+    	
+    	# Incrementar el contador de intercambios
+    	addi $t6, $t6, 1      # Incrementar el contador de intercambios
+    	slti $t0, $t6, 15      # Si $t6 < 15, $t0 = 1; de lo contrario, $t0 = 0
+	bne $t0, $zero, aleatorizar_mazo_loop  # Si $t0 != 0 (es decir, $t6 < 15), salta a "aleatorizar_mazo_loop"
+    	jr $ra                # Regresar a quien llamó a aleatorizar_mazo
     
 # FunciÃ³n para repartir cartas
 repartir_cartas:
