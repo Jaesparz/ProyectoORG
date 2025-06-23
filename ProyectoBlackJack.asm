@@ -1,188 +1,203 @@
 .data
 mazo:   .word 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10  # Mazo de 22 cartas (2 copias de cada carta)
 
-    .text
-    .globl main
-    
-# Funci√≥n principal
+mensaje_decision: .asciiz "øQuÈ deseas hacer? (1 = Pedir carta, 0 = Plantarse): "
+mensaje_turno_jugador1: .asciiz "Es el turno del Jugador 1.\n"
+mensaje_turno_jugador2: .asciiz "Es el turno del Jugador 2.\n"
+mensaje_ganador_juego: .asciiz "°Ganaste! °Felicidades! \n"
+mensaje_perdedor_juego: .asciiz "Perdiste. °Intenta de nuevo! \n"
+mensaje_puntaje: .asciiz "Tu puntaje actual es: "
+mensaje_puntaje_jugador2: .asciiz "El puntaje de Jugador 2 es: "
+mensaje_acciÛn_jugador_roba: .asciiz "El jugador robÛ una carta. "
+mensaje_acciÛn_jugador_planta: .asciiz "El jugador se planta. "
+mensaje_acciÛn_jugador2_roba: .asciiz "El jugador 2 robÛ una carta. "
+mensaje_acciÛn_jugador2_planta: .asciiz "El jugador 2 se planta. "
+
+.text
+.globl main
+
+# FunciÛn principal
 main:
-    # Se inicializa el mazo
-    jal inicializar_mazo
+    # InicializaciÛn
+    li $s2, 0                  # Puntaje del jugador 1
+    li $s3, 0                  # Puntaje del jugador 2
+    li $s4, 0                  # Õndice de la carta actual en el mazo
     
-    # Aleatorizar el mazo
-    jal aleatorizar_mazo
-    
-    # Repartir las cartas
+    # Repartir 2 cartas al jugador 1 y jugador 2
     jal repartir_cartas
+
+    # Turno del jugador 1
+    jal manejar_decision_jugador1
     
+    # Si el jugador 1 se pasÛ de 21, terminamos el juego y el jugador 2 gana
+    bgt $s2, 21, mensaje_perdedor
+
+    # Turno del jugador 2
+    jal manejar_decision_jugador2
     
-    li $v0, 10            
-    syscall             
-    
-# Funci√≥n para inicializar el mazo
+    # Si el jugador 2 se pasÛ de 21, terminamos el juego y el jugador 1 gana
+    bgt $s3, 21, mensaje_ganador
+
+    # Si ambos jugadores se plantaron y est·n dentro de los lÌmites, volvemos al turno de Jugador 1
+    j comparar_puntajes
+
+# FunciÛn para inicializar el mazo
 inicializar_mazo:
-    #la: load address -> la carga en $s0 la direcci√≥n de memoria de mazo. Este registro $s0 ahora contiene la direcci√≥n 
-    # donde empieza el arreglo del mazo. Despu√©s, puedes acceder a los valores con lw usando esa direcci√≥n.
-    
-    la $s0, mazo          # Cargar la direcci√≥n de la variable "mazo" en $s0
-   
-    # Regresamos a la funci√≥n que llam√≥ a "inicializar_mazo"
-    jr $ra
+    la $s0, mazo                # Cargar la direcciÛn del mazo
+    jr $ra                      # Regresar a la funciÛn que llamÛ
 
-    
-# Funcion para aleatorizar el mazo
-aleatorizar_mazo: 
-	#Obtener el contador de ciclos (Semilla)
-	mfc0 $t8, $9
-	
-	# Definir las constantes para el LCG
-    	li $s7, 1664525       # Multiplicador (a)
-    	li $s6, 1013904223    # Incremento (c)
-    	li $s5, 4294967296    # MÛdulo (m)
-    	    	    	
-    	# Aleatorizar el mazo intercambiando cartas
-    	li $t5, 22            # TamaÒo del mazo (22 cartas)
-    	li $t6, 0             # Contador de intercambios
-aleatorizar_mazo_loop:
-	# Generar n˙mero aleatorio (X_1) usando el contador de ciclos (X_0)
-    	mul $t3, $s7, $t8     # X_0 * a
-    	add $t3, $t3, $s6     # (X_0 * a + c)
-    	divu $t3, $s5         # (X_0 * a + c) / m
-    	mfhi $t4              # Obtener el residuo
-    	move $t8, $t4         # X_1
-    	
-    	#Generar el primer indice a partir de (X_1)
-    	move $t9, $t8
-    	divu $t9, $t5
-    	mfhi $t9	# indice entre [0,21]
-    	
-    	# Generar el segundo numero aleatorio (X_2) tomando como semilla (X_1)
-    	mul $t7, $s7, $t8
-    	add $t7, $t7, $s6
-    	divu $t7, $s5
-    	mfhi $t7	# X_2
-    	
-    	#Generar el segundo indice a partir de (X_2)
-    	move $t8, $t7
-    	divu $t7, $t5
-    	mfhi $t7 	# indice entre [0,21]
-    	
-    	# Logica de intercambiar las cartas (Falta implementar correctamente) : 
-    	#la $s0, mazo          # DirecciÛn del mazo
-    	#lw $s7, 0($s0)        # Cargar carta en mazo[t9]
-    	#lw $s6, 4($s0)        # Cargar carta en mazo[t8]
-    	#sw $s6, 0($s0)        # Guardar carta en mazo[t9]
-    	#sw $s7, 4($s0)        # Guardar carta en mazo[t8]
-    	
-    	# Incrementar el contador de intercambios
-    	addi $t6, $t6, 1      # Incrementar el contador de intercambios
-    	slti $t0, $t6, 15      # Si $t6 < 15, $t0 = 1; de lo contrario, $t0 = 0
-	bne $t0, $zero, aleatorizar_mazo_loop  # Si $t0 != 0 (es decir, $t6 < 15), salta a "aleatorizar_mazo_loop"
-    	jr $ra                # Regresar a quien llamÛ a aleatorizar_mazo
-    
-# Funci√≥n para repartir cartas
+# FunciÛn para repartir cartas
 repartir_cartas:
-    # Inicializamos las manos de jugador y crupier con 0
-    li $s2, 0        
-    li $s3, 0          
+    # Carta 1 al jugador 1
+    lw $t0, mazo($s4)          # Cargar carta desde el mazo
+    add $s2, $s2, $t0          # Sumar al puntaje del jugador 1
+    addi $s4, $s4, 4           # Mover al siguiente Ìndice en el mazo (avanzar 4 bytes)
 
-    # Repartir la primera carta al jugador
-    lw $t0, 0($s0)     # Cargar la carta ;)
-    add $s2, $s2, $t0  # Se agrega el valor al puntaje actual
+    # Carta 1 al jugador 2
+    lw $t1, mazo($s4)          # Cargar carta al jugador 2
+    add $s3, $s3, $t1          # Sumar al puntaje del jugador 2
+    addi $s4, $s4, 4           # Mover al siguiente Ìndice en el mazo (avanzar 4 bytes)
 
-    # Repartir la segunda carta al crupier
-    lw $t1, 4($s0)     
-    add $s3, $s3, $t1  
+    # Carta 2 al jugador 1
+    lw $t2, mazo($s4)          # Cargar carta al jugador 1
+    add $s2, $s2, $t2          # Sumar al puntaje del jugador 1
+    addi $s4, $s4, 4           # Mover al siguiente Ìndice en el mazo (avanzar 4 bytes)
 
-    # Repartir la tercera carta al jugador
-    lw $t2, 8($s0)     # Cargar la carta en la tercera posici√≥n del mazo en $t2 (jugador recibe carta)
-    add $s2, $s2, $t2  # Agregar el valor de la carta al puntaje del jugador
+    # Carta 2 al jugador 2
+    lw $t3, mazo($s4)          # Cargar carta al jugador 2
+    add $s3, $s3, $t3          # Sumar al puntaje del jugador 2
+    addi $s4, $s4, 4           # Mover al siguiente Ìndice en el mazo (avanzar 4 bytes)
 
-    # Repartir la cuarta carta al crupier
-    lw $t3, 12($s0)    # Cargar la carta en la cuarta posici√≥n del mazo en $t3 (crupier recibe carta)
-    add $s3, $s3, $t3  # Agregar el valor de la carta al puntaje del crupier
-
-    # Terminar la funci√≥n, regresamos a quien llam√≥ a esta funci√≥n
     jr $ra
-    
-    
-calcular_puntaje:
-    # Verificar si el puntaje del jugador es mayor que 21
-    blez $s2, no_ajustar_as_jugador  
-    
-    # Verificar si el jugador tiene un As (es decir, si su puntaje > 21)
-    # Necesitamos saber si alguna carta es un As (11 puntos)
-    li $t0, 11              
-    divu $s2, $t0           # Dividir el puntaje del jugador por 11
-    mfhi $t1                # El residuo nos dice cu√°ntos Ases tiene el jugador
-    bnez $t1, ajustar_as_jugador # Si hay un As, pasamos a ajustarlo
 
-no_ajustar_as_jugador:
-    # Si no hay As, saltamos a la siguiente parte
-    # Si el puntaje del jugador es mayor a 21, necesitamos hacer ajustes de As
-    jr $ra    # Salimos 
-
-ajustar_as_jugador:
-    # Ajustar el As (convertir de 11 a 1)
-    sub $s2, $s2, 10        # Restar 10 del puntaje del jugador para convertir el As de 11 a 1
-
-    # Ahora, lo mismo para el crupier
-    blez $s3, no_ajustar_as_crupier   #
-    li $t2, 11              
-    divu $s3, $t2           
-    mfhi $t3                
-    bnez $t3, ajustar_as_crupier   
-
-no_ajustar_as_crupier:
-    jr $ra    # Salimos 
-ajustar_as_crupier:
-    sub $s3, $s3, 10        
-    jr $ra    # Regresar a la funci√≥n que llam√≥
-    
-    
-    
-    
- # Funci√≥n para gestionar la decisi√≥n del jugador (Pedir o Plantarse)
-manejar_decision_jugador:
-    # Mostrar el puntaje actual del jugador
-    # (Aqu√≠ podr√≠amos agregar un mensaje, pero en MIPS, eso no es tan directo)
-    # Suponemos que el puntaje ya est√° en $s2 (puntaje del jugador)
-    
-    # Simular la entrada del jugador (Pedir o Plantarse)
-    # Vamos a usar un valor fijo para la simulaci√≥n
-    # 1 = Pedir carta (Hit)
-    # 0 = Plantarse (Stand)
-
-    li $t0, 1      # Supongamos que el jugador elige "Pedir carta" (1)
-    
-    # Si el jugador elige "Pedir carta" (1)
-    beq $t0, 1, pedir_carta
-
-    # Si el jugador elige "Plantarse" (0)
-    beq $t0, 0, plantarse
-
-pedir_carta:
-    # El jugador pide carta
-    # Aqu√≠ simplemente llamamos a la funci√≥n de repartir cartas
-    jal repartir_cartas  # Llamar a la funci√≥n de repartir cartas
-
-    # Verificar si el puntaje del jugador excede 21 despu√©s de pedir la carta
-    blez $s2, continuar_juego  # Si el puntaje <= 21, continuar el juego
-
-    # Si el puntaje excede 21, el jugador pierde autom√°ticamente
-    # Aqu√≠ podr√≠amos agregar un mensaje que indique que el jugador ha perdido.
-    # Terminar el juego (el jugador pierde)
-    li $v0, 10
+# FunciÛn para manejar la decisiÛn del jugador 1 (Pedir o Plantarse)
+manejar_decision_jugador1:
+    # Mostrar mensaje indicando que es el turno del jugador 1
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_turno_jugador1    # DirecciÛn del mensaje
     syscall
 
-continuar_juego:
-    # Si el jugador no se pas√≥ de 21, regresa a la funci√≥n principal para seguir jugando
+    # Mostrar el puntaje actual del jugador 1
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_puntaje    # DirecciÛn del mensaje
+    syscall
+    li $v0, 1                  # Syscall para imprimir entero
+    move $a0, $s2              # Puntaje del jugador 1
+    syscall
+
+    # Mostrar mensaje para que el jugador decida
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_decision   # DirecciÛn de la cadena
+    syscall
+
+    # Leer la decisiÛn del jugador 1 (1 = pedir carta, 0 = plantarse)
+    li $v0, 5                  # Syscall para leer un entero
+    syscall
+    move $t0, $v0              # Guardar la decisiÛn del jugador 1 (1 = pedir, 0 = plantarse)
+
+    beq $t0, 1, pedir_carta1    # Si el jugador 1 elige "Pedir carta" (1)
+    beq $t0, 0, plantarse1      # Si el jugador 1 elige "Plantarse" (0)
+
+pedir_carta1:
+    # El jugador 1 decide pedir carta
+    lw $t1, mazo($s4)          # Cargar la siguiente carta
+    add $s2, $s2, $t1          # Sumarla al puntaje del jugador 1
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_acciÛn_jugador_roba # Mensaje "El jugador 1 robÛ una carta"
+    syscall
+    li $v0, 1                  # Syscall para imprimir valor de la carta robada
+    move $a0, $t1              # Valor de la carta
+    syscall
+    addi $s4, $s4, 4           # Avanzar al siguiente Ìndice en el mazo
+
+    # Verificar si el jugador 1 se pasÛ de 21
+    bgt $s2, 21, mensaje_perdedor  # Si el puntaje es mayor que 21, el jugador 1 pierde
+
+    # Terminar el turno de Jugador 1 y pasar a Jugador 2
+    j manejar_decision_jugador2
+
+plantarse1:
+    # El jugador 1 decide plantarse, termina su turno
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_acciÛn_jugador_planta # Mensaje "El jugador 1 se planta"
+    syscall
+    j manejar_decision_jugador2  # Ahora es el turno del jugador 2
+
+# FunciÛn para manejar la decisiÛn del jugador 2 (Pedir o Plantarse)
+manejar_decision_jugador2:
+    # Mostrar mensaje indicando que es el turno del jugador 2
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_turno_jugador2    # DirecciÛn del mensaje
+    syscall
+
+    # Mostrar el puntaje actual del jugador 2
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_puntaje_jugador2    # DirecciÛn del mensaje
+    syscall
+    li $v0, 1                  # Syscall para imprimir entero
+    move $a0, $s3              # Puntaje del jugador 2
+    syscall
+
+    # Mostrar mensaje para que el jugador decida
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_decision   # DirecciÛn de la cadena
+    syscall
+
+    # Leer la decisiÛn del jugador 2 (1 = pedir carta, 0 = plantarse)
+    li $v0, 5                  # Syscall para leer un entero
+    syscall
+    move $t0, $v0              # Guardar la decisiÛn del jugador 2 (1 = pedir, 0 = plantarse)
+
+    beq $t0, 1, pedir_carta2    # Si el jugador 2 elige "Pedir carta" (1)
+    beq $t0, 0, plantarse2      # Si el jugador 2 elige "Plantarse" (0)
+
+pedir_carta2:
+    # El jugador 2 decide pedir carta
+    lw $t1, mazo($s4)          # Cargar la siguiente carta
+    add $s3, $s3, $t1          # Sumarla al puntaje del jugador 2
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_acciÛn_jugador2_roba # Mensaje "El jugador 2 robÛ una carta"
+    syscall
+    li $v0, 1                  # Syscall para imprimir valor de la carta robada
+    move $a0, $t1              # Valor de la carta
+    syscall
+    addi $s4, $s4, 4           # Avanzar al siguiente Ìndice en el mazo
+
+    # Verificar si el jugador 2 se pasÛ de 21
+    bgt $s3, 21, mensaje_ganador  # Si el puntaje es mayor que 21, el jugador 2 pierde
+
+    # Terminar el turno de Jugador 2 y pasar a comparaciÛn de puntajes
+    j comparar_puntajes
+
+plantarse2:
+    # El jugador 2 decide plantarse, termina su turno
+    li $v0, 4                  # Syscall para imprimir cadena
+    la $a0, mensaje_acciÛn_jugador2_planta # Mensaje "El jugador 2 se planta"
+    syscall
+    j comparar_puntajes         # Comparar puntajes despuÈs de que el jugador 2 termine su turno
+
+# FunciÛn para comparar puntajes
+comparar_puntajes:
+    # Verificar si el jugador 1 o jugador 2 se pasÛ de 21
+    bgt $s2, 21, mensaje_perdedor  # Si el jugador 1 se pasÛ, pierde
+    bgt $s3, 21, mensaje_ganador   # Si el jugador 2 se pasÛ, gana el jugador 1
+
+    # Si ambos jugadores se han plantado sin pasarse de 21, comparar puntajes
+    bge $s2, $s3, mensaje_ganador   # Si el puntaje del jugador 1 es mayor, gana el jugador 1
+    bgt $s3, $s2, mensaje_perdedor  # Si el puntaje del jugador 2 es mayor, gana el jugador 2
+
+    # Si los puntajes son iguales (aunque no es posible debido a las condiciones anteriores), continuar
+    j manejar_decision_jugador1
+
+mensaje_perdedor:
+    li $v0, 4
+    la $a0, mensaje_perdedor_juego
+    syscall
     jr $ra
 
-plantarse:
-    # El jugador se planta, su turno termina, ahora es el turno del crupier
-    # Aqu√≠ llamamos a la funci√≥n del crupier para que empiece su turno.
-    jal turno_crupier
-
-    # Regresamos a la funci√≥n que llam√≥ a "manejar_decision_jugador"
+mensaje_ganador:
+    li $v0, 4
+    la $a0, mensaje_ganador_juego
+    syscall
     jr $ra
+
