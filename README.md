@@ -1,48 +1,44 @@
-# Informe del Proyecto: Blackjack en Ensamblador Objetivo del Proyecto
-El proyecto consiste en desarrollar un juego de Blackjack en lenguaje ensamblador (MIPS). 
-Se implementará un juego entre un solo jugador y el crupier, donde el mazo de cartas será representado 
-como un arreglo y se usarán números pseudo-aleatorios para repartir las cartas. 
-Inicialmente, el mazo tendrá 26 cartas, con la posibilidad de escalar a 52 cartas si se dispone de tiempo adicional.
-El puntaje objetivo para ganar será 17 o 18 puntos al principio, con la opción de cambiar a 21 puntos si el tiempo lo permite.
-
-
-# Blackjack Simplificado
+# Instrucciones del Juego: Blackjack Dinámico
 
 ## Descripción
-Un juego de Blackjack improvisado y optimizado donde:
-- **Tú (Jugador 1)** decides si **pedir carta** o **plantarte**.
-- **La máquina (Jugador 2)** juega automáticamente con una estrategia semi-aleatoria.
-- **Gana quien se acerque más a 21 sin pasarse**.
+¡Bienvenido a Blackjack Dinámico! Este es un emocionante juego de cartas donde la estrategia y el riesgo se combinan para ofrecerte una experiencia divertida y desafiante. En este juego, tú (Jugador 1) compites contra una máquina (Jugador 2) en un intento de acercarte lo más posible a 21 puntos sin pasarte.
 
-## Reglas del Juego
+## Objetivo del Juego
+El objetivo es simple: acumular puntos a través de cartas y decidir cuándo arriesgarte a robar más cartas o plantarte. Si ambos jugadores se plantan, se compararán los puntajes para determinar al ganador. ¡Recuerda, el que arriesga, gana!
 
-1. **Objetivo**:  
-   Sumar **21 puntos o el más cercano** sin pasarse.  
-   Si te pasas de 21 (**"bust"**), pierdes automáticamente.
+## Cómo Jugar
 
-2. **Turnos**:  
-   - **Jugador 1 (Tú)**:  
-     - Ingresa `1` para **robar carta** o `0` para **plantarte**.  
-   - **Jugador 2 (Máquina)**:  
-     - **Si tiene <15 puntos**: Siempre roba.  
-     - **Si tiene 15-17 puntos**: 70% de probabilidad de robar, 30% de plantarse.  
-     - **Si tiene ≥18 puntos**: Siempre se planta.
+1. **Inicio del Juego**:
+   - Al comenzar, recibirás 2 cartas aleatorias, y la máquina también recibirá 2 cartas.
+   - Tu puntaje se mostrará en la pantalla, permitiéndote ver tu progreso en tiempo real.
 
-3. **Fin del juego**:  
-   - Cuando alguien se pasa de 21.  
-   - Si ambos se plantan o se acaban los **10 turnos máximos**, gana quien tenga más puntos.
+2. **Turnos**:
+   - El juego alterna entre tu turno y el turno de la máquina.
+   - En tu turno, se te presentará la opción de **pedir carta** o **plantarte**.
 
-## Ejemplo de partida
+3. **Decisiones**:
+   - **Pedir Carta (1)**: Si decides pedir carta, recibirás una carta aleatoria (valor entre 1 y 10) que se sumará a tu puntaje actual. 
+   - **Plantarse (0)**: Si decides plantarte, tu turno terminará y se pasará a la máquina.
 
---- Turno del Jugador 1 
-Tu puntaje actual es: 12  
-¿Qué deseas hacer? (1 = Pedir carta, 0 = Plantarse): 1  
-Robaste una carta. Valor: 5  
+4. **Turno de la Máquina**:
+   - La máquina tomará decisiones automáticamente basadas en su puntaje:
+     - Si su puntaje es menor a 15, siempre pedirá carta.
+     - Si su puntaje está entre 15 y 18, tiene un 70% de probabilidad de pedir carta.
+     - Si su puntaje es 18 o más, se plantará automáticamente.
 
---- Turno del Jugador 2 
-Puntaje de la Máquina: 16  
-La Máquina robó una carta. Valor: 8  (24 -> ¡Se pasó!)  
+5. **Fin del Turno**:
+   - Si en cualquier momento tu puntaje supera 21, ¡has perdido automáticamente!
+   - Si la máquina supera 21, ¡tú ganas automáticamente!
 
-¡Ganaste!  
+6. **Comparación de Puntajes**:
+   - Si ambos jugadores se plantan, se compararán los puntajes.
+   - El jugador con el puntaje más alto (sin pasarse de 21) será el ganador.
+   - Si ambos tienen el mismo puntaje, se declarará un empate.
+
+## Estrategia
+- **Arriesgarse o no**: La clave del juego es decidir cuándo arriesgarse a pedir más cartas. Observa tu puntaje y el de la máquina, y evalúa si es mejor seguir robando o plantarte.
+- **Conoce tus límites**: Recuerda que si te pasas de 21, pierdes. Mantén un ojo en tu puntaje y actúa con sabiduría.
+
+
 
 
