@@ -1,3 +1,4 @@
+#autores: Josue Esparza y Jorge Bravo
 
 # Mensajes de texto para mostrar información al jugador
 # Cada etiqueta es la dirección donde comienza la cadena en memoria.
